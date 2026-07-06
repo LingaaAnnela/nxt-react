@@ -1,0 +1,26 @@
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  color: #666;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: #111;
+}
+
+.category {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.price {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
