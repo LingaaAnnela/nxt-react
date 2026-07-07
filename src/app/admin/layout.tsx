@@ -3,9 +3,18 @@
 // <router-outlet> in a lazy-loaded admin module. Reading the session makes
 // every /admin page render dynamically (cookies are request data — nothing
 // cookie-dependent can be prerendered at build time).
+import type { Metadata } from 'next';
 import { verifySession } from "@/lib/auth/session";
 import { logout } from "./login/actions";
 import styles from "./layout.module.css";
+
+// Metadata exported from a layout applies to every route nested under it.
+// robots.index: false tells crawlers not to index any /admin page.
+// Inherits title.template from the root layout, so admin pages still get
+// "Page title — Brew Gear" if they export a title.
+export const metadata: Metadata = {
+  robots: { index: false },
+};
 
 export default async function AdminLayout({
   children,

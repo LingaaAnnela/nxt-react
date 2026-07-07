@@ -1,0 +1,61 @@
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.input {
+  width: 100%;
+  max-width: 380px;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #fff;
+  color: inherit;
+  transition: border-color 0.15s, opacity 0.15s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #888;
+}
+
+/* Subtle dim while the server re-renders — gives tactile feedback that a
+   network round-trip is in progress without removing the input from view. */
+.input[data-pending] {
+  opacity: 0.6;
+}
+
+.spinner {
+  position: absolute;
+  left: 346px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ccc;
+  border-top-color: #555;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .input {
+    background: #0a0a0a;
+    border-color: #444;
+  }
+
+  .input:focus {
+    border-color: #888;
+  }
+
+  .spinner {
+    border-color: #444;
+    border-top-color: #aaa;
+  }
+}

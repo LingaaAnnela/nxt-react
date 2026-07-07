@@ -56,6 +56,25 @@
   margin: 0;
 }
 
+/* Matches the input dimensions so there's no layout shift when the real
+   ProductSearchInput hydrates and replaces the Suspense fallback. */
+.searchPlaceholder {
+  height: 2.15rem;
+  max-width: 380px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.empty {
+  color: #666;
+  margin-top: 2rem;
+}
+
+.empty a {
+  text-decoration: underline;
+}
+
 /* --- loading.tsx skeleton --- */
 
 /* Visually hidden but announced by screen readers. */

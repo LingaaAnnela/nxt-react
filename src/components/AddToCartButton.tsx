@@ -6,6 +6,7 @@
 
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import { itemAdded, selectCartItems } from '@/lib/redux/features/cartSlice';
+import { useToast } from '@/lib/toast/ToastProvider';
 
 // Props crossing the server→client boundary ≈ @Input(), with one hard rule:
 // they must be serializable (no functions, no class instances).
@@ -18,10 +19,18 @@ export default function AddToCartButton({ productId }: { productId: string }) {
       selectCartItems(state).find((item) => item.productId === productId)
         ?.quantity ?? 0,
   );
+  // useToast reads from ToastContext — no prop drilling needed. Any component
+  // anywhere in the tree can call addToast without knowing who renders the toasts.
+  const { addToast } = useToast();
+
+  function handleAddToCart() {
+    dispatch(itemAdded(productId));
+    addToast('Added to cart!');
+  }
 
   return (
     <p>
-      <button type="button" onClick={() => dispatch(itemAdded(productId))}>
+      <button type="button" onClick={handleAddToCart}>
         Add to cart
       </button>
       {quantity > 0 && <span> In cart: {quantity}</span>}

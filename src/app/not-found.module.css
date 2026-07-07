@@ -1,0 +1,47 @@
+.container {
+  max-width: 480px;
+  margin: 6rem auto;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.code {
+  font-size: 5rem;
+  font-weight: 700;
+  color: #ddd;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.heading {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.body {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.link {
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.link:hover {
+  border-color: #888;
+}
+
+@media (prefers-color-scheme: dark) {
+  .code {
+    color: #333;
+  }
+
+  .body {
+    color: #aaa;
+  }
+}

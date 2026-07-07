@@ -1,28 +1,50 @@
-// Server Component: this page only fetches and displays data — no state, no
-// event handlers — so it renders entirely on the server and ships no
-// component JS to the browser. An async component awaiting its own data is
-// the closest React gets to an Angular route resolver, except the data lands
-// straight in the component instead of coming through ActivatedRoute.
-import Image from "next/image";
-import Link from "next/link";
-import { connection } from "next/server";
-import type { Product } from "@/lib/shop/types";
-import { formatPrice } from "@/lib/shop/format";
-import styles from "./page.module.css";
+// Server Component: fetches all products, filters by ?q= on the server, and
+// renders the grid. The search input is a Client Component island kept separate
+// so 'use client' doesn't infect the whole page — the grid stays a Server
+// Component even though the input above it is interactive.
+//
+// searchParams is how Next.js exposes URL query params to Server Components.
+// It arrives as a Promise in this Next version (same as params for dynamic
+// routes) and must be awaited. ≈ ActivatedRoute.snapshot.queryParams in
+// Angular, but server-side and async.
+//
+// Why filter here instead of on the client?
+// Server-side filtering means the HTML that arrives already has only the
+// matching products — correct for SEO, correct for users with JS disabled.
+// For huge datasets you'd push this into a DB query. The client never sees
+// the unfiltered list.
+
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { connection } from 'next/server';
+import type { Product } from '@/lib/shop/types';
+import { formatPrice } from '@/lib/shop/format';
+import ProductSearchInput from '@/components/ProductSearchInput';
+import styles from './page.module.css';
+
+// generateMetadata runs before the page renders and receives the same props.
+// When ?q= is set, the browser tab reads e.g. 'Search: "grinder" — Brew Gear'
+// rather than the static 'Products — Brew Gear' — useful for shared links.
+// searchParams is a Promise in this Next version, same as in the page itself.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}): Promise<Metadata> {
+  const { q } = await searchParams;
+  return {
+    title: q ? `Search: "${q}"` : 'Products',
+    description: q
+      ? `Brew Gear products matching "${q}".`
+      : 'Browse all Brew Gear products.',
+  };
+}
 
 async function getProducts(): Promise<Product[]> {
-  // Without this, `next build` prerenders the page and executes the fetch at
-  // BUILD time — when no server is listening on localhost:3000 (the build
-  // failed with ECONNREFUSED). connection() stops prerendering here, so the
-  // fetch only runs per request. In this Next version it replaces the old
-  // `export const dynamic = "force-dynamic"` segment config.
   await connection();
-
-  // A server-side fetch has no browser origin, so a relative "/api/products"
-  // can't resolve — calling our own route handler needs an absolute URL.
-  // We do this hop deliberately to practice route handlers; a Server
-  // Component would normally read the data source (DB, service) directly.
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
   const res = await fetch(`${base}/api/products`);
   if (!res.ok) {
     throw new Error(`Failed to load products (${res.status})`);
@@ -30,37 +52,66 @@ async function getProducts(): Promise<Product[]> {
   return res.json();
 }
 
-export default async function ProductsPage() {
-  const products = await getProducts();
+function filterProducts(products: Product[], query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return products;
+  return products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q),
+  );
+}
+
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q = '' } = await searchParams;
+  const allProducts = await getProducts();
+  const products = filterProducts(allProducts, q);
 
   return (
     <main className={styles.container}>
       <h1>Products</h1>
-      <ul className={styles.grid}>
-        {/* key ≈ trackBy in *ngFor — identity for list reconciliation */}
-        {products.map((product) => (
-          <li key={product.id} className={styles.card}>
-            {/* <Link> ≈ routerLink: client-side navigation + prefetch */}
-            <Link href={`/products/${product.id}`} className={styles.cardLink}>
-              {/* width/height = the file's intrinsic 400×300 — they set the
-                  aspect ratio so space is reserved before load (no layout
-                  shift); CSS decides rendered size. Grid images stay
-                  lazy-loaded (the default). ≈ NgOptimizedImage's ngSrc,
-                  which Angular modeled on this component. */}
-              <Image
-                src={product.imageUrl}
-                alt={product.name}
-                width={400}
-                height={300}
-                className={styles.cardImage}
-              />
-              <h2>{product.name}</h2>
-              <p className={styles.category}>{product.category}</p>
-              <p className={styles.price}>{formatPrice(product.priceCents)}</p>
-            </Link>
-          </li>
-        ))}
-      </ul>
+
+      {/*
+        ProductSearchInput uses useSearchParams() which suspends during SSR.
+        The <Suspense> fallback renders in its place on the server; the real
+        input takes over on hydration. Without Suspense here, Next.js would
+        bail out of static rendering for the entire page.
+        The fallback mirrors the input dimensions to avoid layout shift.
+      */}
+      <Suspense fallback={<div className={styles.searchPlaceholder} />}>
+        <ProductSearchInput />
+      </Suspense>
+
+      {products.length === 0 ? (
+        <p className={styles.empty}>
+          No products match &ldquo;{q}&rdquo;.{' '}
+          <Link href="/products">Clear search</Link>
+        </p>
+      ) : (
+        <ul className={styles.grid}>
+          {products.map((product) => (
+            <li key={product.id} className={styles.card}>
+              <Link href={`/products/${product.id}`} className={styles.cardLink}>
+                <Image
+                  src={product.imageUrl}
+                  alt={product.name}
+                  width={400}
+                  height={300}
+                  className={styles.cardImage}
+                />
+                <h2>{product.name}</h2>
+                <p className={styles.category}>{product.category}</p>
+                <p className={styles.price}>{formatPrice(product.priceCents)}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

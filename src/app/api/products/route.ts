@@ -5,8 +5,15 @@ import { products } from "@/lib/shop/mock-products";
 // route: app/api/products/route.ts → GET /api/products. Uses the web-standard
 // Request/Response APIs, and is NOT cached by default in this Next version.
 export async function GET() {
-  // Simulated network latency, so loading/streaming states are observable
-  // when we add them.
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  // Set SIMULATE_PRODUCTS_ERROR=true in .env.local to trigger the error
+  // boundary at /products. Restart the dev server after changing env vars.
+  if (process.env.SIMULATE_PRODUCTS_ERROR === 'true') {
+    throw new Error('Failed to load products (simulated API failure)');
+  }
+
+  // Simulated network latency — reduced from 3 s (used for loading.tsx demo)
+  // to 500 ms so search feels responsive while still showing useTransition's
+  // isPending state.
+  await new Promise((resolve) => setTimeout(resolve, 500));
   return Response.json(products);
 }
