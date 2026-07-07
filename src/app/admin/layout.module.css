@@ -1,0 +1,25 @@
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.title {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.signOut {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

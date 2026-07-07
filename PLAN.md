@@ -55,6 +55,82 @@ All original backlog exercises are complete as of 2026-07-06. Additional
 work done the same day: per-field checkout validation errors, focus-first-
 invalid-field, form value preservation after failed submits.
 
+## Current exercise — admin product CRUD (forms two ways)
+
+Comparing the two main React form approaches on the same domain:
+
+- [x] **Step 1 — Create product, plain Server Action** (done 2026-07-07).
+      `/admin/products/new`: uncontrolled form + `useActionState`, zod schema
+      with a price-string→cents transform (`src/lib/shop/productSchema.ts`,
+      tested), `addProduct` mutating the in-memory array, `revalidatePath`
+      before `redirect` (order matters — redirect throws). Zod 4 API note:
+      `z.flattenError(error)`, not the deprecated `error.flatten()`.
+- [x] **Step 2 — Edit product, React Hook Form + zod** (done 2026-07-07).
+      `/admin/products/[id]/edit`: `useForm` + `zodResolver` reusing the SAME
+      schema as the action; typed as
+      `useForm<ProductFormInput, unknown, ProductFormValues>` (fields hold
+      z.input, submit produces z.output). `defaultValues` seed fields and the
+      `isDirty` baseline (gates Save). The action is called directly from
+      `handleSubmit` with the raw input strings — server re-parses with the
+      shared schema as the authoritative pass; rejected fields map back via
+      `setError` (incl. `root.server` banner). First test to mock a Server
+      Action module (`ProductEditForm.test.tsx`). Trade-off noted: RHF forms
+      need JS — no progressive enhancement, `defaultValues` fill on mount,
+      not in SSR HTML.
+- [x] **Step 3 — RTK Query cache invalidation** (done 2026-07-07). The admin
+      edit now flows through `useUpdateProductMutation`: a `queryFn` calls
+      the Server Action directly (no HTTP endpoint — RTK Query only needs
+      `{ data }` back), and function-form `invalidatesTags` invalidates
+      `"Product"` only when `status === "success"`, so subscribed
+      `getProducts` queries (cart drawer, checkout) refetch automatically.
+      The action returns a discriminated union instead of `redirect()`ing —
+      navigation moved to the client (`router.push`) because the client owns
+      the tag invalidation. Validation failures ride the DATA channel (the
+      action returns them); RTKQ's error channel is transport failures only
+      (`unwrap()` + try/catch). Two-caches model: `revalidatePath` = server/
+      router cache, `invalidatesTags` = client cache. Known gap: the CREATE
+      path still doesn't invalidate the client cache (its server redirect
+      leaves no client success hook) — candidate follow-up.
+- [x] **Step 4 — Delete product** (done 2026-07-07). A mutation with NO form:
+      `DeleteProductButton` on the edit page ("danger zone") with an inline
+      two-step confirm held in `useState` — not `window.confirm` (blocking,
+      unstylable, untestable). Same queryFn-wraps-action mutation pattern as
+      step 3 (`useDeleteProductMutation`, function-form `invalidatesTags`);
+      pending flag trio noted: `useActionState`→`isPending`,
+      RHF→`isSubmitting`, mutation hook→`isLoading`. On success the button
+      also dispatches `itemRemoved` (cart is plain client state — tags don't
+      refetch it) before `router.push`. `renderWithStore` now returns the
+      store so tests can seed/assert cart state.
+- [x] **Step 5 — Optimistic updates** (done 2026-07-07). `updateProduct` no
+      longer uses `invalidatesTags`: `onQueryStarted` patches the cached
+      `getProducts` list immediately via `api.util.updateQueryData` (Immer
+      draft + inverse patch), `patch.undo()` on server rejection or transport
+      failure, and on success reconciles the cache with the product the
+      action returned (cheaper than a refetch). The optimistic value comes
+      from running the SAME zod schema client-side — a prediction, not a
+      guess. `deleteProduct` stays tag-based deliberately as the pessimistic
+      contrast (making it optimistic = reader exercise). New store-level test
+      file `api.test.ts`: no rendering, seeds the cache with
+      `api.util.upsertQueryData` (a thunk — must be awaited, or patches
+      silently no-op against an empty cache), asserts the patch lands before
+      the mock action resolves.
+- [x] **Step 6 — Auth guard for /admin** (done 2026-07-07). Two-layer design
+      straight from the bundled auth guide: `src/proxy.ts` (Next 16's rename
+      of middleware.ts) does the OPTIMISTIC check — cookie presence only,
+      redirect to `/admin/login?from=…` — while the real boundary is the DAL
+      (`src/lib/auth/session.ts`): `verifySession()` (React `cache`d,
+      value-checked) called inside every mutating action. Session = httpOnly
+      SameSite=Lax cookie holding a SHA-256-derived bearer token (password:
+      `brew-admin` / ADMIN_PASSWORD env; real apps: DB session or jose JWT).
+      Login form echoes NO fields (never echo passwords); `from` is
+      open-redirect-guarded. First nested layout (`admin/layout.tsx`) with a
+      no-JS `<form action={logout}>` sign-out; reading cookies made all
+      /admin routes dynamic. `server-only` poison pill in session.ts caught a
+      real leak path in tests (vitest lacks the server/client split) — fixed
+      with an alias stub in vitest.config.ts. Guard tests in
+      `admin/products/actions.test.ts` run the REAL actions against a fake
+      cookie jar, incl. the forged-cookie case the proxy admits.
+
 ## Conventions
 
 - Every component file starts with a comment explaining **why** it is or isn't

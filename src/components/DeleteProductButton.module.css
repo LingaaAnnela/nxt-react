@@ -1,0 +1,61 @@
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 400px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.delete {
+  align-self: flex-start;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #b00020;
+  border-radius: 6px;
+  background: transparent;
+  color: #b00020;
+  font: inherit;
+  cursor: pointer;
+}
+
+.confirmRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.confirmDelete {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: #b00020;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.confirmDelete:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.cancel {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.warning {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #b00020;
+  margin: 0;
+  font-size: 0.9rem;
+}

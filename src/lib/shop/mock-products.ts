@@ -1,8 +1,10 @@
 import type { Product } from "./types";
 
-// In-memory mock "database", read by the /api/products route handler.
-// Module scope lives for the server process, not per request — fine for
-// read-only mock data, but this is exactly where a real DB would go.
+// In-memory mock "database", read by the /api/products route handler and now
+// mutated by admin Server Actions. Module scope lives for the server process,
+// not per request — so writes ARE visible to later requests, but disappear on
+// server restart (and in dev, an HMR recompile of this module resets it).
+// This is exactly where a real DB would go.
 export const products: Product[] = [
   {
     id: "p1",
@@ -53,3 +55,37 @@ export const products: Product[] = [
     imageUrl: "https://picsum.photos/seed/p6/400/300",
   },
 ];
+
+// The "DELETE" of the mock database.
+export function removeProduct(id: string): boolean {
+  const index = products.findIndex((p) => p.id === id);
+  if (index === -1) return false;
+  products.splice(index, 1);
+  return true;
+}
+
+// The "UPDATE" of the mock database. Id and imageUrl stay fixed — editing
+// changes what a product is, not which product it is.
+export function updateProduct(
+  id: string,
+  changes: Omit<Product, "id" | "imageUrl">,
+): Product | undefined {
+  const product = products.find((p) => p.id === id);
+  if (!product) return undefined;
+  Object.assign(product, changes);
+  return product;
+}
+
+// The "INSERT" of the mock database. Id and imageUrl are server-generated —
+// the client never picks them (next.config.ts already allowlists
+// picsum.photos/seed/** for next/image, so any new seed just works).
+export function addProduct(data: Omit<Product, "id" | "imageUrl">): Product {
+  const id = `p-${crypto.randomUUID().slice(0, 8)}`;
+  const product: Product = {
+    ...data,
+    id,
+    imageUrl: `https://picsum.photos/seed/${id}/400/300`,
+  };
+  products.push(product);
+  return product;
+}

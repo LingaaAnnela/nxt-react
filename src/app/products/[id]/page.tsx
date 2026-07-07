@@ -50,6 +50,11 @@ export default async function ProductDetailPage({
       <p className={styles.price}>{formatPrice(product.priceCents)}</p>
       <p>{product.description}</p>
       <AddToCartButton productId={product.id} />
+      <p>
+        <Link href={`/admin/products/${product.id}/edit`}>
+          Edit product (admin)
+        </Link>
+      </p>
     </main>
   );
 }
