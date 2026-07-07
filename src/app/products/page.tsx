@@ -3,6 +3,7 @@
 // component JS to the browser. An async component awaiting its own data is
 // the closest React gets to an Angular route resolver, except the data lands
 // straight in the component instead of coming through ActivatedRoute.
+import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import type { Product } from "@/lib/shop/types";
@@ -41,6 +42,18 @@ export default async function ProductsPage() {
           <li key={product.id} className={styles.card}>
             {/* <Link> ≈ routerLink: client-side navigation + prefetch */}
             <Link href={`/products/${product.id}`} className={styles.cardLink}>
+              {/* width/height = the file's intrinsic 400×300 — they set the
+                  aspect ratio so space is reserved before load (no layout
+                  shift); CSS decides rendered size. Grid images stay
+                  lazy-loaded (the default). ≈ NgOptimizedImage's ngSrc,
+                  which Angular modeled on this component. */}
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                width={400}
+                height={300}
+                className={styles.cardImage}
+              />
               <h2>{product.name}</h2>
               <p className={styles.category}>{product.category}</p>
               <p className={styles.price}>{formatPrice(product.priceCents)}</p>

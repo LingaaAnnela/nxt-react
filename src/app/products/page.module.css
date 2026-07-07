@@ -32,6 +32,14 @@
   text-decoration: none;
 }
 
+.cardImage {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
 .cardLink h2 {
   font-size: 1.05rem;
   margin: 0 0 0.25rem;
@@ -64,6 +72,14 @@
   background: #e8e8e8;
   border-radius: 4px;
   animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* aspect-ratio mirrors the card image's 400×300 so the skeleton stays
+   layout-identical to the loaded card. */
+.skeletonImage {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  margin-bottom: 0.75rem;
 }
 
 /* Heights mirror the real card's text lines to avoid layout shift. */

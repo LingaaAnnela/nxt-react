@@ -24,6 +24,7 @@ export default function Loading() {
         {Array.from({ length: 6 }, (_, i) => (
           <li key={i} className={styles.card}>
             <div className={styles.cardLink}>
+              <div className={`${styles.skeleton} ${styles.skeletonImage}`} />
               <div className={`${styles.skeleton} ${styles.skeletonTitle}`} />
               <div className={`${styles.skeleton} ${styles.skeletonMeta}`} />
               <div className={`${styles.skeleton} ${styles.skeletonPrice}`} />

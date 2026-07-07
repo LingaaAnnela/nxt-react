@@ -3,6 +3,7 @@ import cartReducer, {
   itemAdded,
   itemRemoved,
   cartCleared,
+  cartHydrated,
   selectCartCount,
 } from "./cartSlice";
 
@@ -45,6 +46,17 @@ describe("cartSlice", () => {
     const filled = cartReducer(undefined, itemAdded("p1"));
     const cleared = cartReducer(filled, cartCleared());
     expect(cleared.items).toEqual([]);
+  });
+
+  it("hydration replaces cart contents wholesale", () => {
+    // Simulates restoring from localStorage after mount: whatever was in
+    // the store (nothing, on a fresh load) is replaced, not merged.
+    const before = cartReducer(undefined, itemAdded("p9"));
+    const after = cartReducer(
+      before,
+      cartHydrated([{ productId: "p1", quantity: 2 }]),
+    );
+    expect(after.items).toEqual([{ productId: "p1", quantity: 2 }]);
   });
 
   it("selectCartCount sums quantities across items", () => {

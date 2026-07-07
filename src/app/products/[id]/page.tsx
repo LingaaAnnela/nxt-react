@@ -3,6 +3,7 @@
 // 'use client' boundary is deliberately pushed down to that button instead of
 // marking this whole page client.
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { products } from "@/lib/shop/mock-products";
 import { formatPrice } from "@/lib/shop/format";
@@ -34,6 +35,17 @@ export default async function ProductDetailPage({
         ← All products
       </Link>
       <h1>{product.name}</h1>
+      {/* priority: this is the page's LCP element, above the fold — preload
+          it instead of the default lazy loading (lazy would *delay* the
+          largest paint). ≈ NgOptimizedImage's priority attribute. */}
+      <Image
+        src={product.imageUrl}
+        alt={product.name}
+        width={400}
+        height={300}
+        priority
+        className={styles.photo}
+      />
       <p className={styles.category}>{product.category}</p>
       <p className={styles.price}>{formatPrice(product.priceCents)}</p>
       <p>{product.description}</p>

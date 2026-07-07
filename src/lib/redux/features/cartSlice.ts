@@ -39,6 +39,12 @@ const cartSlice = createSlice({
     cartCleared: (state) => {
       state.items = [];
     },
+    // Restore from localStorage after hydration — replaces wholesale.
+    // The reducer trusts its payload; validating the untrusted JSON is the
+    // reader's job (cartPersistence.ts), keeping the reducer pure and dumb.
+    cartHydrated: (state, action: PayloadAction<CartItem[]>) => {
+      state.items = action.payload;
+    },
   },
   // Slice-level selectors (RTK 2.x) ≈ createSelector on a feature state;
   // they're automatically scoped to where the slice is mounted (state.cart).
@@ -49,6 +55,7 @@ const cartSlice = createSlice({
   },
 });
 
-export const { itemAdded, itemRemoved, cartCleared } = cartSlice.actions;
+export const { itemAdded, itemRemoved, cartCleared, cartHydrated } =
+  cartSlice.actions;
 export const { selectCartItems, selectCartCount } = cartSlice.selectors;
 export default cartSlice.reducer;
