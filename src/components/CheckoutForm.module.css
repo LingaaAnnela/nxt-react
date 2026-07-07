@@ -31,6 +31,17 @@
   margin: 0;
 }
 
+.fieldError {
+  color: #b00020;
+  font-size: 0.8rem;
+}
+
+/* Style the invalid state off the ARIA attribute — one source of truth,
+   and the styling can't drift out of sync with what screen readers hear. */
+.field input[aria-invalid='true'] {
+  border-color: #b00020;
+}
+
 .submit {
   padding: 0.6rem;
   border: none;

@@ -16,8 +16,16 @@ import type { CartItem } from "@/lib/shop/types";
 
 export interface CheckoutState {
   status: "idle" | "success" | "error";
+  // Form-level error (empty cart, payment declined) — rendered as a banner.
   message?: string;
   orderId?: string;
+  // Echoed back on error so the form can repopulate after React 19's
+  // post-action reset (uncontrolled inputs fall back to defaultValue).
+  fields?: { name: string; email: string };
+  // Per-field validation errors, rendered next to their inputs. Same shape
+  // as zod's flatten().fieldErrors would give (values as single strings
+  // here), so swapping in a schema library later is mechanical.
+  errors?: { name?: string; email?: string };
 }
 
 export async function placeOrder(
@@ -34,11 +42,28 @@ export async function placeOrder(
     // fall through with an empty cart
   }
 
-  if (!name || !email) {
-    return { status: "error", message: "Name and email are required." };
+  // Every error return carries the entered values back to the client.
+  // Only echo what the user typed — never derived/sensitive server data.
+  const fields = { name, email };
+
+  // Per-field validation. The client's type="email" is UX only — this runs
+  // regardless, because the action is reachable by direct POST.
+  // ≈ Validators on a FormGroup, but evaluated server-side.
+  const errors: NonNullable<CheckoutState["errors"]> = {};
+  if (!name) {
+    errors.name = "Name is required.";
   }
+  if (!email) {
+    errors.email = "Email is required.";
+  } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+    errors.email = "That doesn't look like an email address.";
+  }
+  if (Object.keys(errors).length > 0) {
+    return { status: "error", errors, fields };
+  }
+
   if (items.length === 0) {
-    return { status: "error", message: "Your cart is empty." };
+    return { status: "error", message: "Your cart is empty.", fields };
   }
 
   // Recompute the total from server-side data. The client sent only ids and
@@ -53,7 +78,11 @@ export async function placeOrder(
 
   // Deterministic failure hook so the error path can be practiced/tested.
   if (email.toLowerCase().startsWith("decline")) {
-    return { status: "error", message: "Payment declined (simulated)." };
+    return {
+      status: "error",
+      message: "Payment declined (simulated).",
+      fields,
+    };
   }
 
   return {

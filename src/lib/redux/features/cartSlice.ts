@@ -28,6 +28,14 @@ const cartSlice = createSlice({
         state.items.push({ productId: action.payload, quantity: 1 });
       }
     },
+    // Removes the whole line, whatever its quantity. filter() returns a new
+    // array; assigning it to the draft is the idiomatic Immer delete (as
+    // opposed to splice-by-index, which also works but reads worse).
+    itemRemoved: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter(
+        (item) => item.productId !== action.payload,
+      );
+    },
     cartCleared: (state) => {
       state.items = [];
     },
@@ -41,6 +49,6 @@ const cartSlice = createSlice({
   },
 });
 
-export const { itemAdded, cartCleared } = cartSlice.actions;
+export const { itemAdded, itemRemoved, cartCleared } = cartSlice.actions;
 export const { selectCartItems, selectCartCount } = cartSlice.selectors;
 export default cartSlice.reducer;

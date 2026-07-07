@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import cartReducer, {
   itemAdded,
+  itemRemoved,
   cartCleared,
   selectCartCount,
 } from "./cartSlice";
@@ -24,6 +25,20 @@ describe("cartSlice", () => {
     const before = cartReducer(undefined, itemAdded("p1"));
     cartReducer(before, itemAdded("p1"));
     expect(before.items[0].quantity).toBe(1);
+  });
+
+  it("removes an item's entire line regardless of quantity", () => {
+    let state = cartReducer(undefined, itemAdded("p1"));
+    state = cartReducer(state, itemAdded("p1"));
+    state = cartReducer(state, itemAdded("p2"));
+    const after = cartReducer(state, itemRemoved("p1"));
+    expect(after.items).toEqual([{ productId: "p2", quantity: 1 }]);
+  });
+
+  it("removing an unknown id leaves state unchanged (no-op, never throws)", () => {
+    const before = cartReducer(undefined, itemAdded("p1"));
+    const after = cartReducer(before, itemRemoved("nope"));
+    expect(after.items).toEqual(before.items);
   });
 
   it("clears all items", () => {

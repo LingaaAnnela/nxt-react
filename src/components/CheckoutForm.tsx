@@ -4,7 +4,7 @@
 // form with useActionState. The mutation itself (placeOrder) still executes
 // on the server — this component only invokes it.
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks';
 import {
   selectCartItems,
@@ -28,6 +28,22 @@ export default function CheckoutForm() {
     placeOrder,
     initialState,
   );
+  // Ref to a DOM node ≈ @ViewChild + ElementRef.nativeElement.
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Focus is an imperative DOM action, not renderable state — so it's done
+  // in an effect, after React commits (form reset, defaultValue repopulation
+  // and aria-invalid attributes are all in the DOM by then). aria-invalid is
+  // already the single source of truth for "invalid", so querying it beats
+  // keeping a ref per field; document order = first invalid field.
+  // Depending on `state` (a fresh object per submit) re-runs this even when
+  // two submits fail with identical errors — identity, not value.
+  useEffect(() => {
+    if (state.status !== 'error' || !state.errors) return;
+    formRef.current
+      ?.querySelector<HTMLElement>('[aria-invalid="true"]')
+      ?.focus();
+  }, [state]);
 
   // Reacting to a server result by updating client state is effect work —
   // like a subscription in a component, not an NgRx effect (those live at
@@ -56,19 +72,51 @@ export default function CheckoutForm() {
   }, 0);
 
   return (
-    <form action={formAction} className={styles.form}>
+    <form ref={formRef} action={formAction} className={styles.form}>
       {/* The store lives in the browser; the action runs on the server.
           Cart contents cross that gap as form data — ids and quantities
           only, never prices. */}
       <input type="hidden" name="items" value={JSON.stringify(items)} />
 
+      {/* Uncontrolled inputs: React 19 resets the form after every action
+          (matching native POST behavior, for progressive enhancement). On a
+          reset each input falls back to its *current* defaultValue — so
+          echoing the entered values through the action state repopulates a
+          failed submit without converting to controlled inputs. */}
+      {/* aria-invalid + aria-describedby tie each error to its input so
+          assistive tech announces it on focus — without them the message is
+          visible but unreachable. ≈ rendering FormControl.errors, except the
+          errors arrive in the action state from the server. */}
       <label className={styles.field}>
         Name
-        <input name="name" autoComplete="name" />
+        <input
+          name="name"
+          autoComplete="name"
+          defaultValue={state.fields?.name}
+          aria-invalid={state.errors?.name ? true : undefined}
+          aria-describedby={state.errors?.name ? 'name-error' : undefined}
+        />
+        {state.errors?.name && (
+          <span id="name-error" className={styles.fieldError}>
+            {state.errors.name}
+          </span>
+        )}
       </label>
       <label className={styles.field}>
         Email
-        <input name="email" type="email" autoComplete="email" />
+        <input
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={state.fields?.email}
+          aria-invalid={state.errors?.email ? true : undefined}
+          aria-describedby={state.errors?.email ? 'email-error' : undefined}
+        />
+        {state.errors?.email && (
+          <span id="email-error" className={styles.fieldError}>
+            {state.errors.email}
+          </span>
+        )}
       </label>
 
       <p className={styles.total}>
@@ -76,7 +124,8 @@ export default function CheckoutForm() {
         <span>{formatPrice(totalCents)}</span>
       </p>
 
-      {state.status === 'error' && (
+      {/* Form-level errors only — field errors render at their inputs. */}
+      {state.status === 'error' && state.message && (
         <p role="alert" className={styles.error}>
           {state.message}
         </p>

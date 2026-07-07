@@ -25,14 +25,23 @@ the bottom of this file.
 
 ## Possible next exercises
 
-- `itemRemoved` reducer + per-line remove buttons in the cart drawer (TDD it:
-  reducer test first).
-- Close the cart drawer on Escape / backdrop click.
-- Keep form values after a failed checkout submit (React 19 resets uncontrolled
-  forms after an action — return entered values in the action state and use
-  `defaultValue`).
+- ~~`itemRemoved` reducer + per-line remove buttons in the cart drawer~~ —
+  done 2026-07-06, TDD'd (red-green).
+- ~~Close the cart drawer on Escape / backdrop click~~ — done 2026-07-06
+  (first real `useEffect`: document keydown listener + cleanup).
+- ~~Keep form values after a failed checkout submit~~ — done 2026-07-06
+  (action echoes `fields` back in error state; inputs repopulate via
+  `defaultValue` after React 19's post-action form reset).
+- ~~Per-field validation errors~~ — done 2026-07-06 (action returns
+  `errors: { name?, email? }`, hand-rolled but zod-shaped; inputs wired with
+  `aria-invalid`/`aria-describedby`).
+- ~~Focus first invalid field after failed submit~~ — done 2026-07-06
+  (form `useRef` + effect querying `[aria-invalid="true"]`; effect depends
+  on `state` object identity so re-submits refocus).
 - Render product images with `next/image` (needs `remotePatterns` config).
-- A `loading.tsx` for `/products` to see streaming with the 300ms API delay.
+- ~~A `loading.tsx` for `/products`~~ — done 2026-07-06 (skeleton grid reusing
+  the page's CSS module; streaming verified by chunk timing: shell+skeleton
+  flushed at ~43ms, product HTML at ~355ms in the same response).
 - Persist the cart to `localStorage` (store subscription ≈ NgRx meta-reducer
   territory).
 
