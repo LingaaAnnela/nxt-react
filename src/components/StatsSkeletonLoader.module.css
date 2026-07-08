@@ -1,0 +1,53 @@
+/* Shimmer animation — the gradient sweeps left-to-right to signal loading */
+@keyframes shimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Shared shimmer style applied to all placeholder elements */
+.lviewed,
+.card,
+.bar,
+.sectionLabel {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 25%,
+    #e9ecef 50%,
+    #f3f4f6 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.lviewed {
+  height: 14px;
+  width: 220px;
+  margin-bottom: 0.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  height: 80px;
+}
+
+.sectionLabel {
+  height: 18px;
+  width: 140px;
+  margin-top: 0.5rem;
+}
+
+.bar {
+  height: 24px;
+}

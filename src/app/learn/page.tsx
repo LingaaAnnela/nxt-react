@@ -397,6 +397,148 @@ const SECTIONS: { title: string; items: QA[] }[] = [
       },
     ],
   },
+  {
+    title: 'List Virtualisation',
+    items: [
+      {
+        q: 'What problem does virtualisation solve and what is the mechanism?',
+        a: "Rendering all items in a long list creates a DOM node for every item — layout, style, paint, and memory cost for 9,985 invisible rows you can't see. Virtualisation renders only the rows that fit in the viewport (plus a small overscan buffer). The mechanism: calculate startIndex = floor(scrollTop / itemHeight), render items[startIndex..startIndex+visible+overscan], and position each row absolutely at top = index × itemHeight. A spacer element set to totalItems × itemHeight keeps the scrollbar proportional. Try it at /virtualize — the 'Rows in DOM' counter proves it.",
+      },
+      {
+        q: 'What is overscan and why is it necessary?',
+        a: "Overscan is rendering a few rows beyond the visible viewport edge — typically 2–4 items above and below. Without overscan, rows pop into existence exactly at the viewport boundary during fast scrolling, causing visible blank flashes. The extra rows act as a buffer so each row is already mounted before it enters the visible area. The tradeoff: slightly more DOM nodes vs. smooth scrolling with no blank frames.",
+      },
+      {
+        q: 'What does react-window require that a naive <div> list does not?',
+        a: "react-window's FixedSizeList requires all items to be the same height (itemSize prop). The row renderer receives a style prop with absolute positioning — you MUST spread it onto the root element or the row renders at the wrong position. The FixedSizeGrid handles 2D virtualisation (both axes). For variable-height items, use @tanstack/react-virtual, which measures each row after render and updates offsets. Both libraries also provide scrollToItem(index) and keyboard focus management that a manual implementation would skip.",
+      },
+      {
+        q: 'What is the accessibility problem with virtualised lists?',
+        a: "Screen readers use a 'virtual cursor' that navigates the DOM tree independently of scroll position. With virtualisation, rows outside the viewport are not in the DOM — a screen reader at row 200 finds empty space below row 15. Mitigations: (1) add aria-rowcount on the list and aria-rowindex on each row to communicate the true list length; (2) consider server-side pagination instead of virtualisation for data tables where accessibility is critical; (3) @tanstack/react-table with virtualisation has better ARIA support built in.",
+      },
+      {
+        q: 'When should you NOT virtualise a list?',
+        a: "Short lists (under ~100 items): the complexity buys nothing. Lists where all items must exist in the DOM: site-search, certain screen reader patterns, or CSS animations that need all elements mounted. Search-filtered or paginated results: the visible slice is already small, so virtualisation is redundant. The rule: measure first. If DevTools Performance shows the list is not the bottleneck, don't virtualise it.",
+      },
+    ],
+  },
+  {
+    title: 'Code Splitting — React.lazy and next/dynamic',
+    items: [
+      {
+        q: 'What is code splitting and how does Next.js do it automatically?',
+        a: "Code splitting breaks the JS bundle into separate chunks loaded on demand. Next.js splits by route automatically at build time — the JS for /admin/stats is never sent to a user who only visits /products. No configuration required. A 500 KB chart library imported in /admin/stats stays out of the /products bundle entirely. Route-level splitting ≈ Angular's loadChildren in the router, but colocated with the page files instead of a routing config.",
+      },
+      {
+        q: 'What is the difference between React.lazy and next/dynamic?',
+        a: "React.lazy(() => import('./Heavy')) is the standard React API — creates a lazy component that suspends while its chunk downloads, requiring an explicit <Suspense fallback={...}> wrapper. next/dynamic wraps React.lazy with two Next.js additions: (1) loading option as shorthand for the Suspense fallback — no separate wrapper needed in JSX; (2) ssr: false to skip server rendering entirely. In the App Router, prefer next/dynamic when you need ssr: false or want the loading option. Otherwise React.lazy is fine.",
+      },
+      {
+        q: 'When do you need ssr: false and why?',
+        a: "When a component reads browser-only APIs on initial render: localStorage, sessionStorage, window.matchMedia, navigator, document.createElement. During SSR (Node.js), these don't exist. If Next.js server-renders the component, it produces HTML with no localStorage value. The client then hydrates and finds a different value — hydration mismatch, React warning, possible flash. ssr: false skips the server render entirely: the component only ever runs in the browser, so there's nothing to mismatch. The /admin/stats demo uses localStorage to track 'last viewed' — exactly this scenario.",
+      },
+      {
+        q: 'What renders while the chunk is downloading?',
+        a: "The Suspense fallback (or loading option in next/dynamic). The fallback renders server-side and is in the initial HTML — the user sees it immediately, before any JS runs. This is the correct skeleton pattern: the skeleton is a lightweight Server Component that matches the shape of the real content; the heavy Client Component arrives in the separate chunk. A spinner that replaces the whole page is the wrong approach — it causes layout shift and is disorienting on fast connections where the chunk loads in milliseconds.",
+      },
+      {
+        q: 'When should you NOT code-split a component?',
+        a: "When the component is small (< 20 KB): the extra network round-trip for the chunk costs more than the download savings. When the component is shown on every page visit: deferred loading just adds latency. When the bundle difference is negligible after gzip. Measure with next build output and the Network tab before splitting. The most valuable splits are large library imports (Chart.js ~500 KB, pdf.js ~300 KB, rich text editors ~1 MB) used only on specific routes.",
+      },
+    ],
+  },
+  {
+    title: 'Testing — Vitest + React Testing Library',
+    items: [
+      {
+        q: "What is React Testing Library's core philosophy and why does it matter?",
+        a: "Test behaviour, not implementation. RTL's rule: query the DOM the way a user or screen reader would — by role, label, text, or placeholder — never by class name, CSS selector, or component internals. This means tests survive refactors: if you change a class name, restructure a component, or swap a <div> for a <section>, tests don't break as long as the user-facing output is the same. ≈ Angular Testing Library has the same philosophy; TestBed tests that query by component class fail this test.",
+      },
+      {
+        q: 'How do you test a component that reads from or dispatches to the Redux store?',
+        a: "Use renderWithStore() from src/lib/redux/test-utils.tsx — it wraps the component in a real store (created by makeStore()) so selectors and dispatch work exactly as in production. Never mock the store object itself — that defeats the purpose. Pass preloadedState to set initial state: renderWithStore(<CartBadge />, { preloadedState: { cart: { items: [{ productId: '1', quantity: 2 }] } } }). The test then asserts on rendered output, not on store internals.",
+      },
+      {
+        q: 'What should you NOT test in React?',
+        a: "(1) Internal state: don't assert on useState values directly — assert on what the user sees as a result. (2) Implementation details: which function was called, how many times render() ran, what the component's internal variables are. (3) Third-party libraries: don't test that React.memo works — test that YOUR component produces the right output. (4) Types: TypeScript catches these at compile time; an RTL test that just checks a prop accepts a string is noise. The guiding question: would a user notice if this test failed?",
+      },
+      {
+        q: 'How do you test async behaviour — e.g. a component that fetches via RTK Query?',
+        a: "Use findBy* queries (which return Promises) or waitFor() to wait for the DOM to update after the async operation resolves. For RTK Query, set up an MSW (Mock Service Worker) handler that intercepts the fetch and returns fixture data — this tests the full stack (RTK Query → network → component) without hitting a real server. Avoid mocking useGetProductsQuery directly: that test only proves the mock was called, not that the component handles the data correctly.",
+      },
+      {
+        q: 'What is the difference between getBy, queryBy, and findBy?',
+        a: "getBy*: returns the element immediately, throws if not found. Use for elements that must be present right now. queryBy*: returns null if not found instead of throwing. Use to assert an element is ABSENT: expect(queryByText('Error')).not.toBeInTheDocument(). findBy*: async, returns a Promise, retries until the element appears or a timeout. Use for elements that appear after an async operation (data loads, animations). Each variant has a *All form (getAllBy, queryAllBy, findAllBy) for multiple matches.",
+      },
+    ],
+  },
+  {
+    title: 'useEffect — Patterns and Pitfalls',
+    items: [
+      {
+        q: 'What is the rule for useEffect dependency arrays?',
+        a: "The dependency array must contain every reactive value the effect reads — every prop, state variable, and context value used inside. Omitting a dep is a bug: the effect runs with a stale closure, silently using old values. The eslint-plugin-react-hooks/exhaustive-deps rule enforces this automatically. If adding a dep causes infinite re-renders, the real problem is usually an unstable reference (an object or function created during render) — fix it with useMemo or useCallback rather than removing the dep.",
+      },
+      {
+        q: 'Why does React StrictMode call effects twice in development?',
+        a: "StrictMode mounts every component twice (mount → unmount → remount) to surface effects that don't clean up after themselves. If your effect sets up a WebSocket, timer, or event listener and the cleanup doesn't tear it down, you'll get two connections, two timers, or two listeners in development — which reveals the bug before production. The double-invoke only happens in development; production runs effects once. The fix is always a proper cleanup function: return () => { subscription.unsubscribe(); }.",
+      },
+      {
+        q: 'What are the most common useEffect mistakes?',
+        a: "(1) Calling setState synchronously inside an effect body — causes a render → effect → render loop unless the setState is conditional. (2) Missing cleanup for subscriptions, intervals, or event listeners — memory leak and duplicate side effects in StrictMode. (3) An empty dep array [] when the effect uses props or state — stale closure bug that's very hard to debug. (4) Fetching data in useEffect — fine in isolation but you miss loading state, cancellation on unmount, deduplication, and caching. RTK Query or React Query handle all of these. (5) Putting an object or array literal in the dep array — new reference every render, infinite loop.",
+      },
+      {
+        q: 'When should you use an event handler instead of useEffect?',
+        a: "When the code runs in response to a specific user action (a button click, a form submit), use an event handler — not useEffect. useEffect is for synchronising with an external system that React doesn't control: setting a page title, connecting a WebSocket, syncing with localStorage, starting an animation library. The test: if removing the useEffect and moving the code into a click handler works just as well, it belongs in the handler. Effects that run 'when X changes' are usually a sign the logic belongs wherever X is set, not in a separate effect watching it.",
+      },
+      {
+        q: 'How do you abort a fetch inside useEffect to prevent state updates after unmount?',
+        a: "Create an AbortController in the effect and pass signal to fetch. Return a cleanup that calls abort(). If the component unmounts before the fetch completes, the signal fires, fetch throws an AbortError, and your catch block ignores it — no setState on an unmounted component. RTK Query handles this automatically (a better reason to use it): when a component unmounts and no other subscriber holds the subscription, the in-flight request is cancelled.",
+      },
+    ],
+  },
+  {
+    title: 'React 19 — New Patterns',
+    items: [
+      {
+        q: "What does React 19's use() hook do and how is it different from await?",
+        a: "use(promise) suspends the component until the Promise resolves, then returns the resolved value — similar to await, but it works inside a render function. Unlike await, use() can be called conditionally (inside if blocks, after early returns), while hook rules normally forbid conditional calls. In Next.js, you use it to unwrap Promises passed from Server Components: const data = use(dataPromise). This is how searchParams and params are now typed as Promises in Next.js 16.",
+      },
+      {
+        q: "What changed about Context in React 19?",
+        a: "React 19 lets you render a Context directly as a provider without .Provider: <ToastContext value={contextValue}> instead of <ToastContext.Provider value={contextValue}>. The old .Provider syntax still works for backwards compatibility but is no longer needed. Brew Gear uses the new syntax in ToastProvider.tsx. The mental model is unchanged — it is still a context with the same createContext, useContext, and consumer semantics.",
+      },
+      {
+        q: 'How did ref change in React 19 and what does that mean for forwardRef?',
+        a: "In React 19, ref is now a plain prop — you can pass ref to any function component the same way you pass any other prop. forwardRef() is deprecated (though not removed) because it is no longer needed. Before React 19: const Input = forwardRef((props, ref) => <input ref={ref} {...props} />). React 19: const Input = ({ ref, ...props }) => <input ref={ref} {...props} />. This removes a layer of ceremony for component library authors and eliminates a common source of confusion about why a plain ref prop didn't work.",
+      },
+      {
+        q: 'What is useOptimistic and how does it differ from RTK Query optimistic updates?',
+        a: "useOptimistic(state, updateFn) is a React 19 hook that displays a temporary optimistic value while an async operation is pending, then reverts to the real state when it settles. It is designed to work with Server Actions: while the action is in-flight, the UI shows the optimistic value; when the action completes, Server Component re-renders with the authoritative data. RTK Query's optimistic update pattern (updateQueryData + patch.undo) achieves the same result but operates on the client-side RTK cache — no Server Actions required. useOptimistic is simpler when your mutations go through Server Actions; RTK Query's pattern is the right choice when using the client cache.",
+      },
+    ],
+  },
+  {
+    title: 'Concurrent React — Suspense and useDeferredValue',
+    items: [
+      {
+        q: 'What problem does Suspense solve and what triggers a suspension?',
+        a: "Suspense lets you declaratively specify a loading state for part of the component tree while data or code is not yet ready. A component suspends by throwing a Promise — React catches it, shows the nearest Suspense fallback, and re-renders the component when the Promise resolves. In practice you never throw manually: React.lazy, next/dynamic, use(promise), and RTK Query's useSuspenseQuery all throw for you. The Suspense boundary can be placed anywhere above the suspending component in the tree to isolate the loading state.",
+      },
+      {
+        q: 'What is useDeferredValue and how does it differ from useTransition?',
+        a: "Both defer lower-priority work, but they operate at different levels. useTransition wraps a state update: startTransition(() => setState(val)) marks the update as non-urgent, keeping the current UI interactive while React works on the new state. useDeferredValue receives a value and returns a deferred copy that lags behind the real value: const deferred = useDeferredValue(searchQuery). While React catches up, deferred is the previous query — so a filtered list stays on the last result instead of going blank. Use useTransition when you own the state update; use useDeferredValue when you receive the value from outside (a prop or context) and can't wrap the setter.",
+      },
+      {
+        q: 'How does Next.js streaming work with Suspense?',
+        a: "When a Server Component awaits data, Next.js sends the page HTML in chunks over a single HTTP connection. The initial chunk contains the static shell and all Suspense fallbacks. As each async segment resolves, Next.js streams additional HTML (containing the real content) plus a small inline script that replaces the fallback in the DOM. The browser starts rendering the shell immediately — no blank page waiting for the slowest query. This is why loading.tsx shows so quickly: it's in the first chunk, while the page content arrives in subsequent chunks.",
+      },
+      {
+        q: 'Why does Suspense need a key prop to reset when a search query changes?',
+        a: "Suspense keeps its fallback visible until ALL children resolve. If the same Suspense boundary is reused for a new search query, React sees the same boundary and may show stale results or stay on the fallback without re-triggering. Adding key={searchQuery} to the Suspense element forces React to unmount and remount the boundary when the key changes, clearing stale children and immediately showing the fallback again while the new data loads. This is a general React pattern: key as a reset mechanism, not just a list optimisation.",
+      },
+    ],
+  },
 ];
 
 export default async function LearnPage() {
@@ -407,7 +549,9 @@ export default async function LearnPage() {
       <h1 className={styles.heading}>Learn / Prepare</h1>
       <p className={styles.intro}>
         Concept reference and interview prep for everything built in Brew Gear.
-        Try the <Link href="/catalog">Catalog demo</Link> — a live useMemo + React.memo exercise with render count badges.
+        Live demos: <Link href="/catalog">Catalog</Link> (useMemo + React.memo),{' '}
+        <Link href="/virtualize">Virtualize</Link> (windowing),{' '}
+        <Link href="/admin/stats">Stats</Link> (code splitting + ssr: false).
       </p>
 
       <section className={styles.section}>

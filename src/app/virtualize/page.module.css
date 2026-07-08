@@ -1,0 +1,159 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.heading {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin: 0.25rem 0 1.5rem;
+  font-size: 0.95rem;
+}
+
+.callout {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.callout p {
+  margin: 0 0 0.75rem;
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+.calloutNote {
+  color: #0c4a6e;
+  border-top: 1px solid #bae6fd;
+  padding-top: 0.75rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab,
+.tabActive {
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid #111;
+}
+
+.tab {
+  background: white;
+  color: #111;
+}
+
+.tabActive {
+  background: #111;
+  color: white;
+}
+
+.tab:focus-visible,
+.tabActive:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  min-width: 120px;
+}
+
+.counterLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.counterValue {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: #111;
+}
+
+.scroll {
+  height: 480px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.row {
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
+  background: white;
+  box-sizing: border-box;
+}
+
+.rowName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.rowCategory {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.rowPrice {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.loading {
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
