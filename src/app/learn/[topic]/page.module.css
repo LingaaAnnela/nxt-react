@@ -1,0 +1,178 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 5rem;
+}
+
+.breadcrumb {
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+}
+
+.breadcrumb a {
+  color: #666;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* --- Prose styles ---------------------------------------------------------- */
+/* All elements below come from marked's HTML output — we can't add classNames
+   to them, so we style them via descendant selectors on .prose. */
+
+.prose h1 {
+  font-size: 1.9rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.2;
+}
+
+.prose h2 {
+  font-size: 1.3rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.prose h3 {
+  font-size: 1.05rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.prose p {
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  color: #222;
+}
+
+.prose p:first-of-type {
+  font-size: 1.05rem;
+  color: #444;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.prose li {
+  line-height: 1.65;
+  margin-bottom: 0.3rem;
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
+.prose em {
+  font-style: italic;
+  color: #555;
+}
+
+.prose blockquote {
+  border-left: 3px solid #d0d0d0;
+  margin: 1.25rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: #555;
+}
+
+/* Inline code */
+.prose code {
+  font-family: 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 0.85em;
+  background: #f3f3f3;
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+}
+
+/* Code blocks — marked wraps these in <pre><code> */
+.prose pre {
+  background: #1a1a1a;
+  color: #e8e8e8;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  border-radius: 0;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+}
+
+.prose th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid #e2e2e2;
+  font-weight: 600;
+}
+
+.prose td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid #e2e2e2;
+  margin: 2rem 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .breadcrumb a {
+    color: #aaa;
+  }
+
+  .prose h2 {
+    border-color: #333;
+  }
+
+  .prose p {
+    color: #ccc;
+  }
+
+  .prose p:first-of-type {
+    color: #aaa;
+  }
+
+  .prose em {
+    color: #aaa;
+  }
+
+  .prose blockquote {
+    border-color: #444;
+    color: #aaa;
+  }
+
+  .prose code {
+    background: #222;
+  }
+
+  .prose th {
+    border-color: #333;
+  }
+
+  .prose td {
+    border-color: #222;
+  }
+
+  .prose hr {
+    border-color: #333;
+  }
+}

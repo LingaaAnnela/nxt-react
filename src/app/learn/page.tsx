@@ -6,13 +6,13 @@ export const metadata: Metadata = {
   description: 'Concept reference and interview prep for React, Next.js, and Redux built in the Brew Gear project.',
 };
 
-// Server Component: all content is static markup — no hooks, no event handlers,
-// nothing that needs the browser. The accordion uses native <details>/<summary>,
-// which the browser drives via its own internal open/closed state (the HTML `open`
-// attribute). No useState, no 'use client', zero JS shipped to the client for this
-// page. If you needed animated expand/collapse or "only one section open at a time",
-// THAT is when you'd add 'use client' and reach for useState — not before.
+// Server Component: reads topic metadata from the filesystem (via getAllTopicMeta)
+// and renders static markup. The accordion uses native <details>/<summary> — no
+// 'use client' needed. The topic guide links point to /learn/[topic] pages, each
+// backed by a markdown file in src/content/topics/.
 
+import Link from 'next/link';
+import { getAllTopicMeta } from '@/lib/topics';
 import styles from './page.module.css';
 
 type QA = { q: string; a: string };
@@ -269,6 +269,60 @@ const SECTIONS: { title: string; items: QA[] }[] = [
     ],
   },
   {
+    title: 'Angular Services → React Equivalents',
+    items: [
+      {
+        q: 'There are no Angular services in React — what replaces them?',
+        a: "Angular uses a single construct (the @Injectable class) for everything from HTTP calls to shared state to utility logic. React has no DI container, so it spreads those responsibilities across three patterns: custom hooks (stateful shared logic), plain module functions (stateless logic), and Context / Redux (singleton-ish state). The explicit import replaces the injector — you wire dependencies yourself instead of declaring them and letting the framework resolve them.",
+      },
+      {
+        q: 'What is a custom hook and how does it map to an Angular service?',
+        a: "A custom hook is any function whose name starts with 'use' and that calls other hooks internally. It encapsulates stateful logic that multiple components need without prop drilling. ≈ injecting a stateful Angular service into a component: useToast() ≈ inject(ToastService), useAppSelector() ≈ inject(Store).select(), useRouter() ≈ inject(Router), useGetProductsQuery() ≈ inject(ProductService).getAll(). The key difference: a hook is NOT a singleton — each component gets its own hook instance. The singleton part lives in the Context Provider or Redux store above it.",
+      },
+      {
+        q: 'Where does Brew Gear use plain module functions instead of a service class?',
+        a: "Stateless logic that needs no DI is just a plain exported function: formatPrice() in src/lib/shop/format.ts (≈ CurrencyService.format()), addProduct / updateProduct / removeProduct in mock-products.ts (≈ ProductService CRUD methods), verifySession() in src/lib/auth/session.ts (≈ AuthService.verifyToken()), and the zod productSchema (≈ ValidationService.validate()). No class, no decorator, no injector — just import the function and call it. This makes them trivially tree-shakeable and testable without a TestBed.",
+      },
+      {
+        q: 'How does RTK Query replace an Angular HttpClient-based service?',
+        a: "src/lib/redux/api.ts is the equivalent of an Angular service that injects HttpClient. The createApi call defines all endpoints (getProducts, updateProduct, deleteProduct). The generated hooks — useGetProductsQuery(), useUpdateProductMutation() — are what components consume, exactly like calling inject(ProductService).getAll() in a component. RTK Query adds caching, deduplication, loading/error states, and tag invalidation on top, which you'd otherwise wire manually in an NgRx effect.",
+      },
+      {
+        q: 'What replaces an Angular service that runs server-side logic?',
+        a: "Server Actions (src/app/admin/products/actions.ts) and plain async functions called from route handlers. verifySession() in src/lib/auth/session.ts is a pure server-side function — it reads cookies, checks a token, returns a result — exactly like an AuthService method, but it's a plain function imported directly rather than injected. The 'server-only' import at the top of session.ts acts as a compile-time guard that throws a build error if the file is ever imported on the client, ≈ keeping a service out of the browser bundle.",
+      },
+      {
+        q: 'When should you write a custom hook vs a plain function?',
+        a: "Write a plain function when the logic is pure / stateless — no hooks inside, same input always gives same output (formatPrice, productSchema.parse, verifySession). Write a custom hook when the logic needs React hooks internally: useState, useEffect, useContext, useReducer. The rule: if it doesn't call any hook, it doesn't need to be a hook. Naming it useXxx when it's really just a function is misleading and forces unnecessary linting rules.",
+      },
+    ],
+  },
+  {
+    title: 'Prop Drilling & Context API',
+    items: [
+      {
+        q: 'What is prop drilling and when does it become a problem?',
+        a: "Prop drilling is passing data through intermediate components that don't use it, purely to get it to a deeply nested child. One or two levels is normal and fine — it only becomes a problem when the chain is 4–5 levels deep and every component in the chain must declare a prop it doesn't need. ≈ passing a service reference down through @Input() chains in Angular instead of injecting it directly.",
+      },
+      {
+        q: 'Where does Brew Gear use plain props vs Context API?',
+        a: "Plain props: ProductDetailPage passes productId directly to AddToCartButton (one level — fine). Context API: ToastProvider provides addToast to AddToCartButton across multiple layout levels without any intermediate component touching the prop. Redux (which is itself context under the hood): StoreProvider wraps the app so any component can call useAppSelector / useAppDispatch without prop threading. The rule: props for direct parent→child, context when intermediaries would have to carry a prop they don't use.",
+      },
+      {
+        q: 'How do you decide between props, context, Redux, and URL state?',
+        a: "One or two levels deep → plain props, don't overthink it. Many levels, UI-only concern (toasts, theme, open modal) → Context + useReducer or useState. Many levels, domain data with devtools / persistence needs (cart, user session) → Redux. State that should survive a reload, be shareable via URL, or work with back/forward → URL state via searchParams / useSearchParams. Each layer solves a specific scope; reaching for Redux or context before you've exhausted plain props is premature.",
+      },
+      {
+        q: 'Why is the Redux store itself a context under the hood?',
+        a: "Redux's React bindings (react-redux) use createContext internally. StoreProvider renders <Provider store={store}>, which is a context provider. useAppSelector and useAppDispatch are thin wrappers around useContext(ReactReduxContext). You don't see createContext in your code because RTK abstracts it — but every component that reads cart state or dispatches an action is consuming context. This is why StoreProvider must wrap the component tree just like ToastProvider does.",
+      },
+      {
+        q: 'What is the null default pattern for createContext and why use it?',
+        a: "createContext(null) signals 'no provider present'. The useToast() wrapper calls useContext(ToastContext) and throws a clear error if the result is null: 'useToast() must be called inside <ToastProvider>'. Without null as the default you'd need a no-op value — addToast would silently do nothing when called outside the provider and the bug would be invisible. The null + guard pattern turns a silent wrong-context mistake into an immediate, descriptive error. ≈ Angular's inject() throwing when a token isn't provided in the injector hierarchy.",
+      },
+    ],
+  },
+  {
     title: 'Font Optimisation — next/font',
     items: [
       {
@@ -289,19 +343,97 @@ const SECTIONS: { title: string; items: QA[] }[] = [
       },
     ],
   },
+  {
+    title: 'Memoisation — useMemo, useCallback, React.memo',
+    items: [
+      {
+        q: 'What does React.memo do and when does it have no effect?',
+        a: "React.memo wraps a component and shallow-compares each prop before deciding whether to re-render. If all props are reference-equal to the previous render, the previous output is reused. It has no effect when a callback prop is defined inline in the parent — every parent render creates a new function object, the reference comparison always fails, and the child re-renders anyway. Fix: wrap the callback in useCallback in the parent. The /catalog page demonstrates this live with render count badges on each card.",
+      },
+      {
+        q: 'What is referential equality and why does it matter for memoisation?',
+        a: "JavaScript's === compares objects, arrays, and functions by reference, not value. { name: 'same' } === { name: 'same' } is false — different objects. A new array or inline function is always a different reference, even with identical contents. React.memo's shallow check and useEffect dependency arrays both use ===. useMemo and useCallback preserve references across renders so those checks can actually pass. The classic mistake: passing a new object literal {} or array [] as a prop on every render breaks React.memo silently.",
+      },
+      {
+        q: 'Why is useCallback useless without React.memo, and vice versa?',
+        a: "useCallback without React.memo: stabilising a function reference changes nothing if the child re-renders on every parent render regardless. React.memo without useCallback on callbacks: the memo check always fails because the callback is a new reference each render. They're co-requisites: useCallback gives the stable reference; React.memo uses that stability to skip the render. The same logic applies to useMemo — a memoised value passed as a prop only matters if the receiving component checks that prop.",
+      },
+      {
+        q: 'When does useMemo help beyond skipping expensive computation?',
+        a: "useMemo's return value has a stable reference. Passing a memoised array as a prop to a React.memo child: the memo check passes (same reference → skip render). Putting a memoised value in a useEffect dep array: the effect doesn't re-run for unrelated parent renders. Both are cases where the goal isn't computation savings — it's reference stability. This is why you'll see useMemo on even 'cheap' computations when the result is used in a dep array.",
+      },
+      {
+        q: 'When is memoisation the wrong choice?',
+        a: "When the computation is cheap (string formatting, simple arithmetic), the component renders infrequently, or the deps change on every render anyway (the cache never hits). Every useMemo / useCallback call allocates memory for the cached value and runs a dep comparison on every render — if the cache never hits, you paid the cost with no benefit. The right workflow: profile first with React DevTools Profiler → measure actual re-render time → memoize only the specific hot paths the profiler identifies.",
+      },
+    ],
+  },
+  {
+    title: 'Senior Interview Topics — Performance, A11y, Security',
+    items: [
+      {
+        q: 'What is list virtualisation and when do you need it?',
+        a: "List virtualisation renders only the items visible in the viewport instead of the entire list — a 10,000-row table creates 10,000 DOM nodes without it. Libraries: react-window (minimal, good for simple lists/grids) and @tanstack/react-virtual (more flexible, no wrapper element required). The rule: virtualise when you have more than ~100–200 items in a scrollable container and scrolling feels slow. Never virtualise a short list — the added complexity buys nothing.",
+      },
+      {
+        q: 'What are the most important WCAG 2.1 AA requirements for a financial app?',
+        a: "(1) Focus management: when a modal opens, focus moves inside; when it closes, focus returns to the trigger. (2) Colour contrast: 4.5:1 ratio for body text, 3:1 for large text. (3) Keyboard operability: every action reachable without a mouse, including custom dropdowns and date pickers. (4) Form errors: associated with inputs via aria-invalid and aria-describedby so screen readers announce them when the field receives focus. (5) Live regions: dynamic content (toasts, search results, cart count) announced via aria-live='polite' or role='alert'. Brew Gear's toast container uses aria-live='polite'.",
+      },
+      {
+        q: 'Why is localStorage a bad place to store auth tokens?',
+        a: "localStorage is readable by any JavaScript on the page. A single XSS vulnerability — even one from a third-party script — can read and exfiltrate the token. The correct location is an httpOnly cookie: the browser sends it automatically on requests, but JavaScript cannot read document.cookie to steal it. Combine with SameSite=Lax to block CSRF (prevents cross-origin form-POST from sending the cookie) and Secure to enforce HTTPS. Next.js's cookies() API reads httpOnly cookies in Server Components and Server Actions without ever exposing them to client code.",
+      },
+      {
+        q: 'How does React prevent XSS and what breaks that protection?',
+        a: "JSX escapes all string values automatically — <script>alert(1)</script> injected as a React child renders as literal text, not an executable tag. Two things break this: (1) dangerouslySetInnerHTML with user-controlled HTML — safe only with filesystem-sourced content or server-side DOMPurify sanitisation; (2) user-controlled href attributes with javascript: URLs — validate before rendering, or use Next.js <Link> which blocks javascript: URIs. React's escaping applies only to JSX string interpolation; it does not sanitise HTML you inject yourself.",
+      },
+      {
+        q: 'What is code splitting and how do you apply it in a Next.js app?',
+        a: "Code splitting breaks the JS bundle into smaller chunks loaded on demand. Next.js does route-level splitting automatically — each page is its own chunk, never loaded until that route is visited. Apply React.lazy(() => import('./Heavy')) at the component level for heavy UI not shown on first paint: a rich text editor, a PDF viewer, an admin dashboard panel. Wrap in <Suspense fallback={<Skeleton />}> to show a placeholder while the chunk loads. In Next.js, next/dynamic is the recommended alternative to React.lazy for components that need SSR control.",
+      },
+      {
+        q: 'How does React DevTools Profiler help with performance debugging?',
+        a: "Record a Profiler session, then inspect the flame chart: each bar is a component, width represents render time, grey means 'did not render'. The 'Ranked' tab lists all components that rendered, sorted by duration. Look for: (1) components that render on every interaction but appear nowhere in the changed data path — candidates for React.memo; (2) components that take >16ms — causes of jank; (3) the same component rendering multiple times in one interaction — a missing memo or an unstable reference in a dep array. Always profile in production mode — development React adds overhead that distorts measurements.",
+      },
+    ],
+  },
 ];
 
-export default function LearnPage() {
+export default async function LearnPage() {
+  const topics = await getAllTopicMeta();
+
   return (
     <main className={styles.page}>
       <h1 className={styles.heading}>Learn / Prepare</h1>
       <p className={styles.intro}>
         Concept reference and interview prep for everything built in Brew Gear.
-        Click a question to expand the answer. This page is a{' '}
-        <strong>Server Component</strong> — the accordion is{' '}
-        <code>&lt;details&gt;/&lt;summary&gt;</code>, driven by the browser with
-        no JavaScript.
+        Try the <Link href="/catalog">Catalog demo</Link> — a live useMemo + React.memo exercise with render count badges.
       </p>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Topic Guides</h2>
+        <p className={styles.topicIntro}>
+          Full explanations — read these to build the mental model.
+        </p>
+        <ul className={styles.topicList}>
+          {topics.map((t) => (
+            <li key={t.slug}>
+              <Link href={`/learn/${t.slug}`} className={styles.topicLink}>
+                <span className={styles.topicTitle}>{t.title}</span>
+                <span className={styles.topicDesc}>{t.description}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Quick Reference — Q&amp;A</h2>
+        <p className={styles.topicIntro}>
+          Test your recall. Click a question to reveal the answer.
+        </p>
+      </section>
+
       {SECTIONS.map((s) => (
         <Section key={s.title} title={s.title} items={s.items} />
       ))}

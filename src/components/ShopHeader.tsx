@@ -20,6 +20,7 @@ export default function ShopHeader() {
     <header className={styles.header}>
       <nav className={styles.nav}>
         <Link href="/products">Products</Link>
+        <Link href="/catalog">Catalog</Link>
         <Link href="/admin/products/new">Add product</Link>
         <Link href="/learn">Learn</Link>
       </nav>

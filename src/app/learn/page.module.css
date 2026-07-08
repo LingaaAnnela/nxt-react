@@ -26,6 +26,45 @@
   margin-bottom: 2.5rem;
 }
 
+.topicIntro {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.topicList {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.topicLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.topicLink:hover {
+  border-color: #888;
+}
+
+.topicTitle {
+  font-weight: 500;
+}
+
+.topicDesc {
+  font-size: 0.85rem;
+  color: #666;
+}
+
 .sectionTitle {
   font-size: 1.1rem;
   font-weight: 600;
@@ -88,6 +127,19 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .topicLink {
+    border-color: #333;
+  }
+
+  .topicLink:hover {
+    border-color: #666;
+  }
+
+  .topicIntro,
+  .topicDesc {
+    color: #aaa;
+  }
+
   .intro {
     color: #aaa;
   }
