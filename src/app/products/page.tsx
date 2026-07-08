@@ -74,7 +74,12 @@ export default async function ProductsPage({
 
   return (
     <main className={styles.container}>
-      <h1>Products</h1>
+      <div className={styles.pageHeader}>
+        <h1>Products</h1>
+        <Link href="/admin/products/new" className={styles.addButton}>
+          + Add product
+        </Link>
+      </div>
 
       {/*
         ProductSearchInput uses useSearchParams() which suspends during SSR.

@@ -23,7 +23,6 @@ export default function ShopHeader() {
         <Link href="/catalog">Catalog</Link>
         <Link href="/virtualize">Virtualize</Link>
         <Link href="/admin/stats">Stats</Link>
-        <Link href="/admin/products/new">Add product</Link>
         <Link href="/learn">Learn</Link>
       </nav>
       <button

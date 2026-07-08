@@ -539,6 +539,56 @@ const SECTIONS: { title: string; items: QA[] }[] = [
       },
     ],
   },
+  {
+    title: 'Micro Frontends',
+    items: [
+      {
+        q: 'What problem do micro frontends solve and what is the core idea?',
+        a: "Micro frontends apply the microservices idea to the UI: instead of a single frontend monolith owned by many teams, each team owns an independent slice — catalog, cart, checkout — that can be developed, tested, and deployed separately. The shell (host) composes them into one page. The pattern solves team autonomy and release-train coupling, not technical complexity. If one team owns the whole frontend, a monorepo is simpler.",
+      },
+      {
+        q: 'What are the four main composition strategies?',
+        a: "1. Build-time (npm packages): each slice is a package the shell imports and bundles — simple and type-safe, but the shell must redeploy on every slice update, defeating independent deploy. 2. Route-level proxy: a reverse proxy routes /catalog/* to Team A's deployment, /cart/* to Team B's — easy, full SSR, but cross-slice navigation is a full-page reload and shared state (cart count in header) is hard. 3. Module Federation: webpack 5 loads remote components at runtime across deployments — SPA navigation preserved, but SSR and TypeScript integration are rough. 4. Web Components / iframes: framework-agnostic, but verbose, poor SSR, and accessibility is painful with iframes.",
+      },
+      {
+        q: 'What shared concerns must every micro frontend architecture solve?',
+        a: "Auth session (httpOnly cookie on the root domain), design consistency (shared component library / design tokens), shared state across slices (URL params, cookie, or custom event — not a shared Redux store), routing (shell owns the router; slices receive a basename), shared dependencies like React (Module Federation shared: config or CDN singleton — two React instances on one page break hooks), and error isolation (an error boundary per slice so one crash doesn't kill the page).",
+      },
+      {
+        q: 'What is the Angular equivalent of micro frontends?',
+        a: "@angular-architects/native-federation (formerly @angular-architects/module-federation) is the standard Angular tool. It wraps webpack Module Federation with Angular scaffolding: you call loadRemoteModule() in the Angular router config to lazy-load a remote NgModule. The concepts map directly — remote, host, exposes, shared — only the configuration surface differs. The Angular version has better SSR support because Angular Universal and Module Federation were designed together; the React/Next.js combination requires more manual wiring.",
+      },
+      {
+        q: 'When are micro frontends NOT worth the complexity?',
+        a: "When a single team owns the whole frontend — you get all the operational overhead (separate CI pipelines, cross-team contracts, shared dependency alignment) with none of the team autonomy benefit. When the app is small or medium-sized — a well-structured monorepo with shared packages is simpler and faster to ship. When you are in early product — the overhead delays shipping without solving a real problem yet. Rule of thumb: if the entire frontend team fits in one meeting room, you don't need micro frontends.",
+      },
+    ],
+  },
+  {
+    title: 'Module Federation',
+    items: [
+      {
+        q: 'What is Module Federation and how does it differ from normal code splitting?',
+        a: "Normal code splitting (React.lazy, next/dynamic) loads a chunk from YOUR OWN build on demand. Module Federation loads a chunk from a SEPARATELY DEPLOYED application at runtime — the shell never had that code in its build. This means Team A can ship a new version of ProductCard and every consuming app picks it up without rebuilding or redeploying. The browser mechanism is the same (a dynamic chunk fetch); the difference is that the chunk lives on another server and was built independently.",
+      },
+      {
+        q: 'What do the terms host, remote, exposed module, and shared dependency mean?',
+        a: "Remote: an app that exposes components for others to consume, emitting a remoteEntry.js manifest at build time. Host: an app that loads components from one or more remotes at runtime. Exposed module: a specific file the remote makes available (e.g. './ProductCard' → the component file). Shared dependency: a library (react, react-dom) that host and remote agree to share one copy of rather than each bundling their own. An app can be both a host and a remote simultaneously.",
+      },
+      {
+        q: "Why is singleton: true mandatory for React in the shared config?",
+        a: "React hooks rely on a module-level singleton — there must be exactly one React instance on the page. Without singleton: true, the host and remote each bundle their own copy; the browser runs two Reacts and hooks break with an 'Invalid hook call' error. singleton: true tells webpack to enforce a single shared copy and throw if the host and remote require incompatible versions. The same rule applies to react-dom and any context-based library, because React Context relies on reference equality to the same Context object.",
+      },
+      {
+        q: 'What are the rough edges of Module Federation in Next.js specifically?',
+        a: "Four main friction points: (1) SSR — a remote component fetched at runtime cannot be server-rendered by the host; use ssr: false in next/dynamic for federated components. (2) TypeScript — the remote's types aren't in the host's build; you must publish a separate @types package or write declare module stubs. (3) Turbopack — Next.js 16's default dev bundler does not support Module Federation; run next dev --turbo false during development. (4) Version alignment — host and remote must use the same React version or singleton enforcement throws at runtime.",
+      },
+      {
+        q: 'When should you use Module Federation vs. a route-level proxy vs. npm packages?',
+        a: "npm packages (build-time): simplest, full TypeScript, full SSR — but the shell must rebuild on every update, so it is not truly independently deployable. Use for shared component libraries within one team. Route-level proxy: each team deploys a standalone app, a reverse proxy routes by path — easy, full SSR, independent deploy — but cross-slice navigation is a full-page reload and shared UI state is hard. Use when SPA navigation across slices is not a requirement. Module Federation: SPA navigation + independent deploy — use when you have multiple autonomous teams AND need seamless navigation. The operational complexity is highest; only reach for it when the other two options are genuinely insufficient.",
+      },
+    ],
+  },
 ];
 
 export default async function LearnPage() {
